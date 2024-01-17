@@ -1,70 +1,140 @@
-"""Primary application entrypoint.
-"""
-import locale
-import logging
-import os
-import sys
-from typing import List, Optional
+import pygame, sys
+from button import Button
+from pygame import mixer
+pygame.init()
+pygame.mixer.music.load("8bit.mp3")
+pygame.mixer.music.play(-1)  # The -1 means the music will loop indefinitely
+SCREEN = pygame.display.set_mode((1280, 720))
+pygame.display.set_caption("Menu")
 
-from pip._internal.cli.autocompletion import autocomplete
-from pip._internal.cli.main_parser import parse_command
-from pip._internal.commands import create_command
-from pip._internal.exceptions import PipError
-from pip._internal.utils import deprecation
+BG = pygame.image.load("assets/Rainbow.png")
 
-logger = logging.getLogger(__name__)
+def get_font(size): # Returns Press-Start-2P in the desired size
+    return pygame.font.Font("assets/font.ttf", size)
 
+def FirstLevel():
+    blue = (0, 0, 255)  # RGB for blue
+    pink = (255, 192, 203)  # RGB for pink
+    message = ""
+    font = pygame.font.Font(None, 36)
+    screen_width, screen_height = SCREEN.get_size()
 
-# Do not import and use main() directly! Using it directly is actively
-# discouraged by pip's maintainers. The name, location and behavior of
-# this function is subject to change, so calling it directly is not
-# portable across different pip versions.
+    # Main loop for the first level
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                return  # Exit the function
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Check which half was clicked
+                if event.pos[0] < screen_width // 2:
+                    message = "Blue half clicked!"
+                else:
+                    message = "Pink half clicked!"
 
-# In addition, running pip in-process is unsupported and unsafe. This is
-# elaborated in detail at
-# https://pip.pypa.io/en/stable/user_guide/#using-pip-from-your-program.
-# That document also provides suggestions that should work for nearly
-# all users that are considering importing and using main() directly.
+        # Draw the two halves
+        SCREEN.fill((255, 255, 255))  # Clear screen
+        pygame.draw.rect(SCREEN, blue, (0, 0, screen_width // 2, screen_height))
+        pygame.draw.rect(SCREEN, pink, (screen_width // 2, 0, screen_width // 2, screen_height))
 
-# However, we know that certain users will still want to invoke pip
-# in-process. If you understand and accept the implications of using pip
-# in an unsupported manner, the best approach is to use runpy to avoid
-# depending on the exact location of this entry point.
+        # Display the message
+        if message:
+            font = pygame.font.Font(None, 36)
+            text = font.render(message, True, (0, 0, 0))
+            SCREEN.blit(text, (screen_width // 4, screen_height // 2))
+        text_box_content = "Welcome to the First Level"
+        text_box = font.render(text_box_content, True, (0, 0, 0))
+        SCREEN.blit(text_box, (500, 10))  # Adjust (10, 10) for positioning
 
-# The following example shows how to use runpy to invoke pip in that
-# case:
-#
-#     sys.argv = ["pip", your, args, here]
-#     runpy.run_module("pip", run_name="__main__")
-#
-# Note that this will exit the process after running, unlike a direct
-# call to main. As it is not safe to do any processing after calling
-# main, this should not be an issue in practice.
+        pygame.display.flip()
+def play():
+    while True:
+        PLAY_MOUSE_POS = pygame.mouse.get_pos()
 
+        SCREEN.fill("black")
 
-def main(args: Optional[List[str]] = None) -> int:
-    if args is None:
-        args = sys.argv[1:]
+        PLAY_TEXT = get_font(45).render("This is the PLAY screen.", True, "White")
+        PLAY_RECT = PLAY_TEXT.get_rect(center=(640, 260))
+        SCREEN.blit(PLAY_TEXT, PLAY_RECT)
 
-    # Configure our deprecation warnings to be sent through loggers
-    deprecation.install_warning_logger()
+        PLAY_BACK = Button(image=None, pos=(640, 460),
+                            text_input="BACK", font=get_font(75), base_color="White", hovering_color="Green")
 
-    autocomplete()
+        PLAY_BACK.changeColor(PLAY_MOUSE_POS)
+        PLAY_BACK.update(SCREEN)
 
-    try:
-        cmd_name, cmd_args = parse_command(args)
-    except PipError as exc:
-        sys.stderr.write(f"ERROR: {exc}")
-        sys.stderr.write(os.linesep)
-        sys.exit(1)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if PLAY_BACK.checkForInput(PLAY_MOUSE_POS):
+                    main_menu()
 
-    # Needed for locale.getpreferredencoding(False) to work
-    # in pip._internal.utils.encoding.auto_decode
-    try:
-        locale.setlocale(locale.LC_ALL, "")
-    except locale.Error as e:
-        # setlocale can apparently crash if locale are uninitialized
-        logger.debug("Ignoring error %s when setting locale", e)
-    command = create_command(cmd_name, isolated=("--isolated" in cmd_args))
+        pygame.display.update()
+    
+def options():
+    while True:
+        OPTIONS_MOUSE_POS = pygame.mouse.get_pos()
 
-    return command.main(cmd_args)
+        SCREEN.fill("white")
+
+        OPTIONS_TEXT = get_font(45).render("This is the OPTIONS screen.", True, "Black")
+        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(640, 260))
+        SCREEN.blit(OPTIONS_TEXT, OPTIONS_RECT)
+
+        OPTIONS_BACK = Button(image=None, pos=(640, 460), 
+                            text_input="BACK", font=get_font(75), base_color="Black", hovering_color="Green")
+
+        OPTIONS_BACK.changeColor(OPTIONS_MOUSE_POS)
+        OPTIONS_BACK.update(SCREEN)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if OPTIONS_BACK.checkForInput(OPTIONS_MOUSE_POS):
+                    main_menu()
+
+        pygame.display.update()
+
+def main_menu():
+
+    while True:
+        SCREEN.blit(BG, (0, 0))
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
+        #pygame.mixer.music.play(-1)  # The -1 means the music will loop indefinitely
+        MENU_TEXT = get_font(100).render("SEXUALIDAD", True, "#f08080")
+        MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
+
+        PLAY_BUTTON = Button(image=pygame.image.load("assets/Play Rect.png"), pos=(640, 250),
+                             text_input="JUGAR", font=get_font(75), base_color="#FFB2B2", hovering_color="White")
+        OPTIONS_BUTTON = Button(image=pygame.image.load("assets/Options Rect.png"), pos=(640, 400),
+                                text_input="INFO", font=get_font(75), base_color="#FFFBEF", hovering_color="White")
+        QUIT_BUTTON = Button(image=pygame.image.load("assets/Quit Rect.png"), pos=(640, 550),
+                             text_input="QUIT", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
+
+        SCREEN.blit(MENU_TEXT, MENU_RECT)
+
+        for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
+            button.changeColor(MENU_MOUSE_POS)
+            button.update(SCREEN)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    #play()
+                    FirstLevel()
+                if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    options()
+                if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    pygame.quit()
+                    sys.exit()
+        pygame.display.update()
+
+main_menu()
