@@ -1,66 +1,29 @@
-import pyxel
+class Button():
+	def __init__(self, image, pos, text_input, font, base_color, hovering_color):
+		self.image = image
+		self.x_pos = pos[0]
+		self.y_pos = pos[1]
+		self.font = font
+		self.base_color, self.hovering_color = base_color, hovering_color
+		self.text_input = text_input
+		self.text = self.font.render(self.text_input, True, self.base_color)
+		if self.image is None:
+			self.image = self.text
+		self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
+		self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
 
-from .settings import (
-    BUTTON_DISABLED_COLOR,
-    BUTTON_ENABLED_COLOR,
-    BUTTON_PRESSED_COLOR,
-    BUTTON_PRESSING_TIME,
-)
-from .widget import Widget
+	def update(self, screen):
+		if self.image is not None:
+			screen.blit(self.image, self.rect)
+		screen.blit(self.text, self.text_rect)
 
+	def checkForInput(self, position):
+		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
+			return True
+		return False
 
-class Button(Widget):
-    """
-    Variables:
-        is_pressed_var
-
-    Events:
-        press
-    """
-
-    def __init__(self, parent, x, y, width, height, **kwargs):
-        super().__init__(parent, x, y, width, height, **kwargs)
-        self._pressing_time = 0
-
-        # Initialize is_pressed_var
-        self.new_var("is_pressed_var", None)
-        self.add_var_event_listener("is_pressed_var", "get", self.__on_is_pressed_get)
-        self.add_var_event_listener("is_pressed_var", "set", self.__on_is_pressed_set)
-
-        # Set event listeners
-        self.add_event_listener("mouse_down", self.__on_mouse_down)
-        self.add_event_listener("mouse_repeat", self.__on_mouse_down)
-        self.add_event_listener("mouse_up", self.__on_mouse_up)
-        self.add_event_listener("update", self.__on_update)
-
-    @property
-    def button_color(self):
-        if not self.is_enabled_var:
-            return BUTTON_DISABLED_COLOR
-        elif self.is_pressed_var:
-            return BUTTON_PRESSED_COLOR
-        else:
-            return BUTTON_ENABLED_COLOR
-
-    def __on_is_pressed_get(self, value):
-        return self._pressing_time > 0
-
-    def __on_is_pressed_set(self, value):
-        if value:
-            self._pressing_time = BUTTON_PRESSING_TIME + 1
-            self.trigger_event("press")
-        else:
-            self._pressing_time = 0
-        return None
-
-    def __on_mouse_down(self, key, x, y):
-        if key == pyxel.MOUSE_BUTTON_LEFT:
-            self.is_pressed_var = True
-
-    def __on_mouse_up(self, key, x, y):
-        if key == pyxel.MOUSE_BUTTON_LEFT:
-            self.is_pressed_var = False
-
-    def __on_update(self):
-        if self._pressing_time > 0:
-            self._pressing_time -= 1
+	def changeColor(self, position):
+		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
+			self.text = self.font.render(self.text_input, True, self.hovering_color)
+		else:
+			self.text = self.font.render(self.text_input, True, self.base_color)
